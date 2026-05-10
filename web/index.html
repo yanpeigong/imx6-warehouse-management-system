@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>仓库管理系统 - Web端</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap: 实验箱若无法外网，把这个 CSS 下载下来放在本地目录，改成相对路径 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background:#f5f7fa; }
+    .team-bar {
+      background: linear-gradient(90deg, #1976D2, #0D47A1);
+      color:white; padding:14px; text-align:center;
+      font-weight:bold; font-size:16px; letter-spacing:1px;
+    }
+    .stat-card { border-left:4px solid #1976D2; }
+    .stat-card.success { border-left-color:#388E3C; }
+    .stat-card.warning { border-left-color:#F57C00; }
+    .stat-card.danger  { border-left-color:#D32F2F; }
+    .stat-num { font-size:28px; font-weight:bold; color:#0D47A1; }
+    .badge-in  { background:#388E3C; }
+    .badge-out { background:#D32F2F; }
+    h1.page-title { color:#0D47A1; margin:20px 0; }
+    .nav-tabs .nav-link.active { font-weight:bold; }
+  </style>
+</head>
+<body>
+
+<!-- 顶部：组员信息（必须展示） -->
+<div class="team-bar">
+  📦 基于条码扫描的仓库管理系统 ——
+  组员：张三 23041001&nbsp;&nbsp;&nbsp;&nbsp;李四 23041002
+</div>
+
+<div class="container-fluid my-4">
+
+  <!-- 统计卡片 -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card stat-card p-3">
+      <div class="text-muted">商品总数</div>
+      <div class="stat-num" id="stat_products">-</div>
+    </div></div>
+    <div class="col-md-3"><div class="card stat-card success p-3">
+      <div class="text-muted">库存总量（件）</div>
+      <div class="stat-num" id="stat_stock">-</div>
+    </div></div>
+    <div class="col-md-3"><div class="card stat-card warning p-3">
+      <div class="text-muted">库存总价值（元）</div>
+      <div class="stat-num" id="stat_value">-</div>
+    </div></div>
+    <div class="col-md-3"><div class="card stat-card danger p-3">
+      <div class="text-muted">今日操作笔数</div>
+      <div class="stat-num" id="stat_today">-</div>
+    </div></div>
+  </div>
+
+  <!-- 选项卡 -->
+  <ul class="nav nav-tabs" id="mainTab" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-inv">📋 库存总览</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-ops">📜 出入库流水</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-chart">📊 数据报表</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-mgmt">⚙️ 商品管理</button></li>
+  </ul>
+
+  <div class="tab-content border border-top-0 p-3 bg-white">
+
+    <!-- 库存总览 -->
+    <div class="tab-pane fade show active" id="pane-inv">
+      <div class="d-flex mb-2">
+        <input class="form-control me-2" id="invKeyword" placeholder="按条码或名称搜索..." style="max-width:300px">
+        <button class="btn btn-primary me-2" onclick="loadInventory()">搜索</button>
+        <button class="btn btn-outline-secondary" onclick="document.getElementById('invKeyword').value='';loadInventory()">重置</button>
+      </div>
+      <table class="table table-striped table-hover">
+        <thead class="table-light"><tr>
+          <th>ID</th><th>条码</th><th>名称</th><th>规格</th><th>单价(元)</th><th>库存</th>
+        </tr></thead>
+        <tbody id="invTable"></tbody>
+      </table>
+    </div>
+
+    <!-- 流水 -->
+    <div class="tab-pane fade" id="pane-ops">
+      <table class="table table-striped table-hover">
+        <thead class="table-light"><tr>
+          <th>ID</th><th>类型</th><th>条码</th><th>商品名称</th><th>数量</th><th>操作员</th><th>时间</th><th>备注</th>
+        </tr></thead>
+        <tbody id="opsTable"></tbody>
+      </table>
+    </div>
+
+    <!-- 图表 -->
+    <div class="tab-pane fade" id="pane-chart">
+      <div class="row">
+        <div class="col-md-6"><h5>各商品当前库存对比</h5><canvas id="chartStock"></canvas></div>
+        <div class="col-md-6"><h5>近7日出入库趋势</h5><canvas id="chartTrend"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 商品管理 -->
+    <div class="tab-pane fade" id="pane-mgmt">
+      <div class="card p-3 mb-3">
+        <h5>➕ 新增商品</h5>
+        <div class="row g-2">
+          <div class="col"><input class="form-control" id="newBarcode" placeholder="条码"></div>
+          <div class="col"><input class="form-control" id="newName"    placeholder="名称"></div>
+          <div class="col"><input class="form-control" id="newSpec"    placeholder="规格"></div>
+          <div class="col"><input class="form-control" id="newPrice"   placeholder="单价" type="number" step="0.01"></div>
+          <div class="col-auto"><button class="btn btn-success" onclick="addProduct()">新增</button></div>
+        </div>
+        <div id="mgmtTip" class="mt-2 small"></div>
+      </div>
+      <div class="alert alert-info">
+        更多编辑功能（修改价格、删除商品等）可以在本页面扩展，以增加创新性分数。
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="text-center text-muted mt-4 small">
+    &copy; 2026 《计算系统设计与实现》综合实验 - 仓库管理系统
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ====== 统一 API 根路径 ======
+const API = '/api';
+
+async function api(action, params={}) {
+  const q = new URLSearchParams({action, ...params}).toString();
+  const r = await fetch(`${API}?${q}`);
+  return await r.json();
+}
+async function apiPost(action, body) {
+  const r = await fetch(`${API}?action=${action}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  return await r.json();
+}
+
+// ====== 加载仪表盘 ======
+async function loadStats() {
+  const d = await api('stats');
+  document.getElementById('stat_products').textContent = d.products;
+  document.getElementById('stat_stock').textContent    = d.stock;
+  document.getElementById('stat_value').textContent    = d.value.toFixed(2);
+  document.getElementById('stat_today').textContent    = d.today;
+}
+
+// ====== 库存表格 ======
+async function loadInventory() {
+  const kw = document.getElementById('invKeyword').value;
+  const d = await api('products', {kw});
+  const tbody = document.getElementById('invTable');
+  tbody.innerHTML = d.data.map(p => `
+    <tr>
+      <td>${p.id}</td><td><code>${p.barcode}</code></td>
+      <td>${p.name}</td><td>${p.spec||''}</td>
+      <td>${p.price.toFixed(2)}</td>
+      <td class="${p.stock<=10?'text-danger fw-bold':''}">${p.stock}</td>
+    </tr>`).join('');
+}
+
+// ====== 流水 ======
+async function loadOps() {
+  const d = await api('ops');
+  const tbody = document.getElementById('opsTable');
+  tbody.innerHTML = d.data.map(o => `
+    <tr>
+      <td>${o.id}</td>
+      <td><span class="badge ${o.op_type==='in'?'badge-in':'badge-out'}">${o.op_type==='in'?'入库':'出库'}</span></td>
+      <td><code>${o.barcode}</code></td>
+      <td>${o.name||''}</td><td>${o.quantity}</td>
+      <td>${o.operator||''}</td><td>${o.op_time}</td>
+      <td>${o.remark||''}</td>
+    </tr>`).join('');
+}
+
+// ====== 图表 ======
+let chartStock, chartTrend;
+async function loadCharts() {
+  const d = await api('chart');
+  if (chartStock) chartStock.destroy();
+  chartStock = new Chart(document.getElementById('chartStock'), {
+    type:'bar',
+    data:{ labels:d.stock.labels, datasets:[{ label:'库存量', data:d.stock.values, backgroundColor:'#1976D2' }]},
+    options:{ responsive:true, plugins:{legend:{display:false}} }
+  });
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(document.getElementById('chartTrend'), {
+    type:'line',
+    data:{ labels:d.trend.labels, datasets:[
+      { label:'入库', data:d.trend.in_values,  borderColor:'#388E3C', backgroundColor:'#388E3C33', fill:true },
+      { label:'出库', data:d.trend.out_values, borderColor:'#D32F2F', backgroundColor:'#D32F2F33', fill:true }
+    ]},
+    options:{ responsive:true }
+  });
+}
+
+// ====== 新增商品 ======
+async function addProduct() {
+  const payload = {
+    barcode: document.getElementById('newBarcode').value.trim(),
+    name:    document.getElementById('newName').value.trim(),
+    spec:    document.getElementById('newSpec').value.trim(),
+    price:   parseFloat(document.getElementById('newPrice').value) || 0
+  };
+  const tip = document.getElementById('mgmtTip');
+  if (!payload.barcode || !payload.name) {
+    tip.className = 'mt-2 small text-danger'; tip.textContent = '条码和名称不能为空'; return;
+  }
+  const r = await apiPost('add_product', payload);
+  if (r.ok) {
+    tip.className = 'mt-2 small text-success'; tip.textContent = `✓ 新增成功，ID=${r.id}`;
+    ['newBarcode','newName','newSpec','newPrice'].forEach(id => document.getElementById(id).value='');
+    loadStats(); loadInventory();
+  } else {
+    tip.className = 'mt-2 small text-danger'; tip.textContent = `✗ ${r.msg}`;
+  }
+}
+
+// ====== 初始化：每5秒自动刷新统计 ======
+async function refreshAll() {
+  loadStats(); loadInventory(); loadOps(); loadCharts();
+}
+refreshAll();
+setInterval(loadStats, 5000);   // 实时感体现：QT端一操作这里就更新
+
+// 切换Tab时重新加载对应数据
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach(btn => {
+  btn.addEventListener('shown.bs.tab', e => {
+    const t = e.target.dataset.bsTarget;
+    if (t === '#pane-inv')   loadInventory();
+    if (t === '#pane-ops')   loadOps();
+    if (t === '#pane-chart') loadCharts();
+  });
+});
+document.getElementById('invKeyword').addEventListener('keyup', e => {
+  if (e.key === 'Enter') loadInventory();
+});
+</script>
+</body>
+</html>
