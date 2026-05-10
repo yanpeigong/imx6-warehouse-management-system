@@ -17,9 +17,9 @@
 StockOutDialog::StockOutDialog(SerialReader *reader, const QString &operatorName, QWidget *parent)
     : QDialog(parent), reader_(reader), operatorName_(operatorName) {
     setWindowTitle("出库");
-    resize(520, 480);
+    resize(460, 380);
 
-    QLabel *title = new QLabel("📤 出库 — 请扫描商品条码");
+    QLabel *title = new QLabel("📤 出库 �?请扫描商品条�?);
     QFont f = title->font();
     f.setPointSize(14); f.setBold(true);
     title->setFont(f);
@@ -33,20 +33,20 @@ StockOutDialog::StockOutDialog(SerialReader *reader, const QString &operatorName
     lblPrice_   = new QLabel("--");
     lblStock_   = new QLabel("--");
     QFormLayout *fl = new QFormLayout(grp);
-    fl->addRow("条  码:", lblBarcode_);
-    fl->addRow("名  称:", lblName_);
-    fl->addRow("规  格:", lblSpec_);
-    fl->addRow("单  价:", lblPrice_);
+    fl->addRow("�? �?", lblBarcode_);
+    fl->addRow("�? �?", lblName_);
+    fl->addRow("�? �?", lblSpec_);
+    fl->addRow("�? �?", lblPrice_);
     fl->addRow("当前库存:", lblStock_);
 
     spinQty_ = new QSpinBox;
     spinQty_->setRange(1, 99999);
     spinQty_->setValue(1);
     editRemark_ = new QLineEdit;
-    editRemark_->setPlaceholderText("可选");
+    editRemark_->setPlaceholderText("可�?);
     QFormLayout *fl2 = new QFormLayout;
     fl2->addRow("出库数量:", spinQty_);
-    fl2->addRow("备  注:", editRemark_);
+    fl2->addRow("�? �?", editRemark_);
 
     btnOk_ = new QPushButton("确认出库");
     btnOk_->setEnabled(false);
@@ -84,7 +84,7 @@ void StockOutDialog::onBarcodeScanned(const QString &barcode) {
 
 void StockOutDialog::onManualInputClicked() {
     bool ok = false;
-    QString bc = QInputDialog::getText(this, "手动输入条码", "请输入条码:",
+    QString bc = QInputDialog::getText(this, "手动输入条码", "请输入条�?",
                                         QLineEdit::Normal, "", &ok);
     if (ok && !bc.trimmed().isEmpty()) {
         loadProduct(bc.trimmed());
@@ -94,20 +94,20 @@ void StockOutDialog::onManualInputClicked() {
 void StockOutDialog::loadProduct(const QString &barcode) {
     QVariantMap p = DbManager::instance().findProductByBarcode(barcode);
     if (p.isEmpty()) {
-        QMessageBox::warning(this, "未找到",
-            QString("条码 %1 不存在，请先入库该商品").arg(barcode));
+        QMessageBox::warning(this, "未找�?,
+            QString("条码 %1 不存在，请先入库该商�?).arg(barcode));
         return;
     }
     currentProduct_ = p;
     lblBarcode_->setText(p["barcode"].toString());
     lblName_->setText(p["name"].toString());
     lblSpec_->setText(p["spec"].toString());
-    lblPrice_->setText(QString::number(p["price"].toDouble(), 'f', 2) + " 元");
+    lblPrice_->setText(QString::number(p["price"].toDouble(), 'f', 2) + " �?);
     int stock = p["stock"].toInt();
     lblStock_->setText(QString::number(stock));
     if (stock <= 0) {
         lblStock_->setStyleSheet("color:red; font-weight:bold;");
-        lblTip_->setText("⚠ 当前库存为 0，无法出库");
+        lblTip_->setText("�?当前库存�?0，无法出�?);
         lblTip_->setStyleSheet("color:red;");
         btnOk_->setEnabled(false);
     } else {
@@ -144,7 +144,7 @@ void StockOutDialog::onConfirmClicked() {
 
     if (qty > stock) {
         QMessageBox::warning(this, "库存不足",
-            QString("当前库存 %1，无法出库 %2").arg(stock).arg(qty));
+            QString("当前库存 %1，无法出�?%2").arg(stock).arg(qty));
         return;
     }
 
@@ -156,7 +156,7 @@ void StockOutDialog::onConfirmClicked() {
     if (!db.insertOperation("out", pid, bc, qty, operatorName_, editRemark_->text())) {
         QMessageBox::warning(this, "警告", "流水记录失败");
     }
-    lblTip_->setText(QString("✓ 出库成功：%1 × %2").arg(currentProduct_["name"].toString()).arg(qty));
+    lblTip_->setText(QString("�?出库成功�?1 × %2").arg(currentProduct_["name"].toString()).arg(qty));
     lblTip_->setStyleSheet("color:#388E3C;");
     clearProduct();
 }

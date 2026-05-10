@@ -17,7 +17,7 @@
 StockInDialog::StockInDialog(SerialReader *reader, const QString &operatorName, QWidget *parent)
     : QDialog(parent), reader_(reader), operatorName_(operatorName) {
     setWindowTitle("入库");
-    resize(520, 480);
+    resize(460, 380);
  
     // ===== 顶部提示 =====
     QLabel *title = new QLabel("📦 入库 — 请扫描商品条码");

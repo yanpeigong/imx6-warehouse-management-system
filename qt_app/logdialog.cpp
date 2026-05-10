@@ -9,10 +9,10 @@
 #include <QHBoxLayout>
 
 LogDialog::LogDialog(QWidget *parent) : QDialog(parent) {
-    setWindowTitle("操作日志");
-    resize(800, 500);
+    setWindowTitle("????");
+    resize(700, 420);
 
-    QLabel *title = new QLabel("📜 操作日志（最近100条）");
+    QLabel *title = new QLabel("?? ???????100??");
     QFont f = title->font();
     f.setPointSize(14); f.setBold(true);
     title->setFont(f);
@@ -21,13 +21,13 @@ LogDialog::LogDialog(QWidget *parent) : QDialog(parent) {
     table_ = new QTableWidget;
     table_->setColumnCount(7);
     table_->setHorizontalHeaderLabels(QStringList()
-        << "ID" << "类型" << "条码" << "商品名称" << "数量" << "操作员" << "时间");
+        << "ID" << "??" << "??" << "????" << "??" << "???" << "??");
     table_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table_->setSelectionBehavior(QAbstractItemView::SelectRows);
 
-    QPushButton *btnRefresh = new QPushButton("刷新");
-    QPushButton *btnClose   = new QPushButton("关闭");
+    QPushButton *btnRefresh = new QPushButton("??");
+    QPushButton *btnClose   = new QPushButton("??");
     QHBoxLayout *hb = new QHBoxLayout;
     hb->addWidget(btnRefresh); hb->addStretch(); hb->addWidget(btnClose);
 
@@ -49,7 +49,7 @@ void LogDialog::refresh() {
         const auto &m = list[i];
         table_->setItem(i, 0, new QTableWidgetItem(QString::number(m["id"].toInt())));
         QString op = m["op_type"].toString();
-        QTableWidgetItem *opItem = new QTableWidgetItem(op == "in" ? "入库" : "出库");
+        QTableWidgetItem *opItem = new QTableWidgetItem(op == "in" ? "??" : "??");
         opItem->setForeground(op == "in" ? QColor("#388E3C") : QColor("#D32F2F"));
         table_->setItem(i, 1, opItem);
         table_->setItem(i, 2, new QTableWidgetItem(m["barcode"].toString()));
