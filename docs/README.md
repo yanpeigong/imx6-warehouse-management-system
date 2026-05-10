@@ -123,7 +123,7 @@ cd /home/uptech/warehouse
 mkdir -p /home/uptech/warehouse_run/web
 cp qt_app/WarehouseQt           /home/uptech/warehouse_run/
 cp db/warehouse.db              /home/uptech/warehouse_run/
-cp web/index.html               /home/uptech/warehouse_run/web/
+cp web/*          /home/uptech/warehouse_run/web/
 
 # 实验箱（minicom）
 cp -r /mnt/warehouse_run /opt/warehouse
