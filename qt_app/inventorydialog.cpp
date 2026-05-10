@@ -11,7 +11,7 @@
 
 InventoryDialog::InventoryDialog(QWidget *parent) : QDialog(parent) {
     setWindowTitle("库存查询");
-    resize(720, 480);
+    resize(620, 400);
 
     QLabel *title = new QLabel("📋 库存查询");
     QFont f = title->font();
