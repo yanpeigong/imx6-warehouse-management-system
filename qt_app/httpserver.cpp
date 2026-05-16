@@ -114,6 +114,8 @@ QByteArray HttpServer::handleRequest(const QString &method, const QString &path,
     if (action == "ops")          return apiOps();
     if (action == "chart")        return apiChart();
     if (action == "add_product" && method == "POST") return apiAddProduct(body);
+    if (action == "update_product" && method == "POST") return apiUpdateProduct(body);
+    if (action == "delete_product" && method == "POST") return apiDeleteProduct(body);
 
     QJsonObject obj;
     obj["ok"] = false;
@@ -240,6 +242,61 @@ QByteArray HttpServer::apiAddProduct(const QByteArray &body) {
         o["ok"] = false; o["msg"] = "db error";
         return makeJsonResponse(500, QJsonDocument(o).toJson(QJsonDocument::Compact));
     }
+}
+
+QByteArray HttpServer::apiUpdateProduct(const QByteArray &body) {
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(body, &err);
+    if (err.error != QJsonParseError::NoError) {
+        QJsonObject o; o["ok"] = false; o["msg"] = "invalid json";
+        return makeJsonResponse(400, QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+    QJsonObject in = doc.object();
+    int id    = in.value("id").toInt();
+    QString name  = in.value("name").toString().trimmed();
+    QString spec  = in.value("spec").toString().trimmed();
+    double  price = in.value("price").toDouble();
+
+    if (id <= 0 || name.isEmpty()) {
+        QJsonObject o; o["ok"] = false; o["msg"] = "id and name required";
+        return makeJsonResponse(400, QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+    bool ok = DbManager::instance().updateProduct(id, name, spec, price);
+    QJsonObject o;
+    o["ok"] = ok;
+    if (!ok) o["msg"] = "update failed";
+    return makeJsonResponse(ok ? 200 : 500, QJsonDocument(o).toJson(QJsonDocument::Compact));
+}
+
+QByteArray HttpServer::apiDeleteProduct(const QByteArray &body) {
+    QJsonParseError err;
+    QJsonDocument doc = QJsonDocument::fromJson(body, &err);
+    if (err.error != QJsonParseError::NoError) {
+        QJsonObject o; o["ok"] = false; o["msg"] = "invalid json";
+        return makeJsonResponse(400, QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+    QJsonObject in = doc.object();
+    int id = in.value("id").toInt();
+
+    if (id <= 0) {
+        QJsonObject o; o["ok"] = false; o["msg"] = "id required";
+        return makeJsonResponse(400, QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+    // 检查库存是否为 0
+    QVariantMap prod = DbManager::instance().findProductById(id);
+    if (prod.isEmpty()) {
+        QJsonObject o; o["ok"] = false; o["msg"] = "商品不存在";
+        return makeJsonResponse(404, QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+    if (prod["stock"].toInt() != 0) {
+        QJsonObject o; o["ok"] = false; o["msg"] = "库存不为0，无法删除";
+        return makeJsonResponse(400, QJsonDocument(o).toJson(QJsonDocument::Compact));
+    }
+    bool ok = DbManager::instance().deleteProduct(id);
+    QJsonObject o;
+    o["ok"] = ok;
+    if (!ok) o["msg"] = "delete failed";
+    return makeJsonResponse(ok ? 200 : 500, QJsonDocument(o).toJson(QJsonDocument::Compact));
 }
 
 // ============== 工具 ==============

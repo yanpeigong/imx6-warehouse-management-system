@@ -21,14 +21,15 @@
     .badge-out { background:#D32F2F; }
     h1.page-title { color:#0D47A1; margin:20px 0; }
     .nav-tabs .nav-link.active { font-weight:bold; }
+    .tab-pane { padding:16px; }
   </style>
 </head>
 <body>
 
 <!-- 顶部：组员信息（必须展示） -->
 <div class="team-bar">
-  📦 基于条码扫描的仓库管理系统 ——
-  组员：龚焱培 2023211640&nbsp;&nbsp;&nbsp;&nbsp;李宏恩 23041002
+  基于条码扫描的仓库管理系统 —
+  组员：龚焱培 2023211640&nbsp;&nbsp;&nbsp;&nbsp;李宏恩 2023211644
 </div>
 
 <div class="container-fluid my-4">
@@ -55,10 +56,10 @@
 
   <!-- 选项卡 -->
   <ul class="nav nav-tabs" id="mainTab" role="tablist">
-    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-inv">📋 库存总览</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-ops">📜 出入库流水</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-chart">📊 数据报表</button></li>
-    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-mgmt">⚙️ 商品管理</button></li>
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-inv">库存总览</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-ops">出入库流水</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-chart">数据报表</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-mgmt">商品管理</button></li>
   </ul>
 
   <div class="tab-content border border-top-0 p-3 bg-white">
@@ -98,147 +99,339 @@
 
     <!-- 商品管理 -->
     <div class="tab-pane fade" id="pane-mgmt">
+      <!-- 新增商品 -->
       <div class="card p-3 mb-3">
-        <h5>➕ 新增商品</h5>
-        <div class="row g-2">
-          <div class="col"><input class="form-control" id="newBarcode" placeholder="条码"></div>
-          <div class="col"><input class="form-control" id="newName"    placeholder="名称"></div>
-          <div class="col"><input class="form-control" id="newSpec"    placeholder="规格"></div>
-          <div class="col"><input class="form-control" id="newPrice"   placeholder="单价" type="number" step="0.01"></div>
+        <h5>新增商品</h5>
+        <div class="row g-2 align-items-end">
+          <div class="col">
+            <label class="form-label">条码</label>
+            <div class="input-group">
+              <input class="form-control" id="newBarcode" placeholder="手工输入或扫码录入" autocomplete="off">
+              <button class="btn btn-outline-primary" type="button" id="scanBtn" title="扫码录入">扫码</button>
+            </div>
+          </div>
+          <div class="col"><input class="form-control" id="newName" placeholder="名称"></div>
+          <div class="col"><input class="form-control" id="newSpec" placeholder="规格"></div>
+          <div class="col"><input class="form-control" id="newPrice" placeholder="单价" type="number" step="0.01"></div>
           <div class="col-auto"><button class="btn btn-success" onclick="addProduct()">新增</button></div>
         </div>
         <div id="mgmtTip" class="mt-2 small"></div>
       </div>
-      <div class="alert alert-info">
-        更多编辑功能（修改价格、删除商品等）可以在本页面扩展，以增加创新性分数。
+
+      <!-- 商品列表 -->
+      <h5>商品列表</h5>
+      <div class="d-flex mb-2">
+        <input class="form-control me-2" id="mgmtKeyword" placeholder="搜索条码或名称..." style="max-width:300px">
+        <button class="btn btn-primary me-2" onclick="loadMgmt()">搜索</button>
+        <button class="btn btn-outline-secondary" onclick="document.getElementById('mgmtKeyword').value='';loadMgmt()">重置</button>
       </div>
+      <table class="table table-striped table-hover">
+        <thead class="table-light"><tr>
+          <th>ID</th><th>条码</th><th>名称</th><th>规格</th><th>单价(元)</th><th>库存</th><th>操作</th>
+        </tr></thead>
+        <tbody id="mgmtTable"></tbody>
+      </table>
     </div>
 
   </div>
 
   <footer class="text-center text-muted mt-4 small">
-    &copy; 2026 《计算系统设计与实现》综合实验 - 仓库管理系统
+    计算系统设计与实现 综合实验 - 仓库管理系统
   </footer>
 </div>
+
+<!-- 编辑商品弹窗 -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">编辑商品</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="mb-2">
+          <label class="form-label">条码</label>
+          <input class="form-control" id="editBarcode" readonly>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">名称</label>
+          <input class="form-control" id="editName">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">规格</label>
+          <input class="form-control" id="editSpec">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">单价（元）</label>
+          <input class="form-control" id="editPrice" type="number" step="0.01">
+        </div>
+        <div id="editTip" class="small mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script src="bootstrap.bundle.min.js"></script>
 <script src="chart.umd.min.js"></script>
 <script>
-// ====== 统一 API 根路径 ======
 const API = '/api';
 
 async function api(action, params={}) {
-  const q = new URLSearchParams({action, ...params}).toString();
-  const r = await fetch(`${API}?${q}`);
-  return await r.json();
+  try {
+    const q = new URLSearchParams({action, ...params}).toString();
+    const r = await fetch(API + '?' + q);
+    return await r.json();
+  } catch(e) {
+    console.error('API error:', e);
+    return {};
+  }
 }
 async function apiPost(action, body) {
-  const r = await fetch(`${API}?action=${action}`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(body)
-  });
-  return await r.json();
+  try {
+    const r = await fetch(API + '?action=' + action, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    return await r.json();
+  } catch(e) {
+    console.error('API POST error:', e);
+    return {ok:false, msg:'网络错误'};
+  }
 }
 
-// ====== 加载仪表盘 ======
-async function loadStats() {
-  const d = await api('stats');
-  document.getElementById('stat_products').textContent = d.products;
-  document.getElementById('stat_stock').textContent    = d.stock;
-  document.getElementById('stat_value').textContent    = d.value.toFixed(2);
-  document.getElementById('stat_today').textContent    = d.today;
+// ====== 扫码录入 ======
+// 直接聚焦条码输入框，扫码枪直接写入，省去弹窗和焦点问题
+document.getElementById('scanBtn').addEventListener('click', function() {
+  var input = document.getElementById('newBarcode');
+  input.focus();
+});
+
+// 扫码枪输入完成后自动触发（扫码枪会发送 Enter 或 Tab 跳到下一个输入框）
+document.getElementById('newBarcode').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    var val = e.target.value.replace(/\r/g, '').replace(/\n/g, '').trim();
+    if (val.length > 0) {
+      // 自动填入并可选清空
+      e.target.value = val;
+    }
+  }
+});
+
+// ====== 仪表盘 ======
+function loadStats() {
+  api('stats').then(function(d) {
+    if (!d) return;
+    document.getElementById('stat_products').textContent = d.products != null ? d.products : '-';
+    document.getElementById('stat_stock').textContent = d.stock != null ? d.stock : '-';
+    document.getElementById('stat_value').textContent = d.value != null ? d.value.toFixed(2) : '-';
+    document.getElementById('stat_today').textContent = d.today != null ? d.today : '-';
+  });
 }
 
 // ====== 库存表格 ======
-async function loadInventory() {
-  const kw = document.getElementById('invKeyword').value;
-  const d = await api('products', {kw});
-  const tbody = document.getElementById('invTable');
-  tbody.innerHTML = d.data.map(p => `
-    <tr>
-      <td>${p.id}</td><td><code>${p.barcode}</code></td>
-      <td>${p.name}</td><td>${p.spec||''}</td>
-      <td>${p.price.toFixed(2)}</td>
-      <td class="${p.stock<=10?'text-danger fw-bold':''}">${p.stock}</td>
-    </tr>`).join('');
+function loadInventory() {
+  var kw = document.getElementById('invKeyword').value;
+  api('products', {kw:kw}).then(function(d) {
+    var tbody = document.getElementById('invTable');
+    if (!d || !d.data) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">暂无数据</td></tr>'; return; }
+    if (d.data.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">无匹配结果</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < d.data.length; i++) {
+      var p = d.data[i];
+      html += '<tr><td>' + p.id + '</td><td><code>' + p.barcode + '</code></td><td>' + p.name + '</td><td>' + (p.spec||'') + '</td><td>' + p.price.toFixed(2) + '</td><td' + (p.stock <= 10 ? ' class="text-danger fw-bold"' : '') + '>' + p.stock + '</td></tr>';
+    }
+    tbody.innerHTML = html;
+  });
 }
 
 // ====== 流水 ======
-async function loadOps() {
-  const d = await api('ops');
-  const tbody = document.getElementById('opsTable');
-  tbody.innerHTML = d.data.map(o => `
-    <tr>
-      <td>${o.id}</td>
-      <td><span class="badge ${o.op_type==='in'?'badge-in':'badge-out'}">${o.op_type==='in'?'入库':'出库'}</span></td>
-      <td><code>${o.barcode}</code></td>
-      <td>${o.name||''}</td><td>${o.quantity}</td>
-      <td>${o.operator||''}</td><td>${o.op_time}</td>
-      <td>${o.remark||''}</td>
-    </tr>`).join('');
+function loadOps() {
+  api('ops').then(function(d) {
+    var tbody = document.getElementById('opsTable');
+    if (!d || !d.data) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">暂无数据</td></tr>'; return; }
+    if (d.data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">暂无流水记录</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < d.data.length; i++) {
+      var o = d.data[i];
+      var badge = o.op_type === 'in' ? '<span class="badge" style="background:#388E3C">入库</span>' : '<span class="badge" style="background:#D32F2F">出库</span>';
+      html += '<tr><td>' + o.id + '</td><td>' + badge + '</td><td><code>' + o.barcode + '</code></td><td>' + (o.name||'') + '</td><td>' + o.quantity + '</td><td>' + (o.operator||'') + '</td><td>' + (o.op_time||'') + '</td><td>' + (o.remark||'') + '</td></tr>';
+    }
+    tbody.innerHTML = html;
+  });
 }
 
 // ====== 图表 ======
-let chartStock, chartTrend;
-async function loadCharts() {
-  const d = await api('chart');
-  if (chartStock) chartStock.destroy();
-  chartStock = new Chart(document.getElementById('chartStock'), {
-    type:'bar',
-    data:{ labels:d.stock.labels, datasets:[{ label:'库存量', data:d.stock.values, backgroundColor:'#1976D2' }]},
-    options:{ responsive:true, plugins:{legend:{display:false}} }
-  });
-  if (chartTrend) chartTrend.destroy();
-  chartTrend = new Chart(document.getElementById('chartTrend'), {
-    type:'line',
-    data:{ labels:d.trend.labels, datasets:[
-      { label:'入库', data:d.trend.in_values,  borderColor:'#388E3C', backgroundColor:'#388E3C33', fill:true },
-      { label:'出库', data:d.trend.out_values, borderColor:'#D32F2F', backgroundColor:'#D32F2F33', fill:true }
-    ]},
-    options:{ responsive:true }
+var chartStock = null, chartTrend = null;
+function loadCharts() {
+  api('chart').then(function(d) {
+    if (!d || !d.stock || !d.trend) { return; }
+
+    if (chartStock) { chartStock.destroy(); chartStock = null; }
+    var ctx1 = document.getElementById('chartStock');
+    if (ctx1 && d.stock.labels && d.stock.labels.length > 0) {
+      chartStock = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: d.stock.labels,
+          datasets: [{ label: '库存量', data: d.stock.values, backgroundColor: '#1976D2' }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+    }
+
+    if (chartTrend) { chartTrend.destroy(); chartTrend = null; }
+    var ctx2 = document.getElementById('chartTrend');
+    if (ctx2 && d.trend.labels && d.trend.labels.length > 0) {
+      chartTrend = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: d.trend.labels,
+          datasets: [
+            { label: '入库', data: d.trend.in_values,  borderColor: '#388E3C', backgroundColor: '#388E3C33', fill: true },
+            { label: '出库', data: d.trend.out_values, borderColor: '#D32F2F', backgroundColor: '#D32F2F33', fill: true }
+          ]
+        },
+        options: { responsive: true }
+      });
+    }
   });
 }
 
 // ====== 新增商品 ======
-async function addProduct() {
-  const payload = {
+function addProduct() {
+  var payload = {
     barcode: document.getElementById('newBarcode').value.trim(),
     name:    document.getElementById('newName').value.trim(),
     spec:    document.getElementById('newSpec').value.trim(),
     price:   parseFloat(document.getElementById('newPrice').value) || 0
   };
-  const tip = document.getElementById('mgmtTip');
+  var tip = document.getElementById('mgmtTip');
   if (!payload.barcode || !payload.name) {
-    tip.className = 'mt-2 small text-danger'; tip.textContent = '条码和名称不能为空'; return;
+    tip.className = 'mt-2 small text-danger';
+    tip.textContent = '条码和名称不能为空';
+    return;
   }
-  const r = await apiPost('add_product', payload);
-  if (r.ok) {
-    tip.className = 'mt-2 small text-success'; tip.textContent = `✓ 新增成功，ID=${r.id}`;
-    ['newBarcode','newName','newSpec','newPrice'].forEach(id => document.getElementById(id).value='');
-    loadStats(); loadInventory();
-  } else {
-    tip.className = 'mt-2 small text-danger'; tip.textContent = `✗ ${r.msg}`;
-  }
+  apiPost('add_product', payload).then(function(r) {
+    if (r.ok) {
+      tip.className = 'mt-2 small text-success';
+      tip.textContent = '新增成功，ID=' + r.id;
+      document.getElementById('newBarcode').value = '';
+      document.getElementById('newName').value = '';
+      document.getElementById('newSpec').value = '';
+      document.getElementById('newPrice').value = '';
+      loadStats(); loadInventory(); loadMgmt();
+    } else {
+      tip.className = 'mt-2 small text-danger';
+      tip.textContent = r.msg || '新增失败';
+    }
+  });
 }
 
-// ====== 初始化：每5秒自动刷新统计 ======
-async function refreshAll() {
-  loadStats(); loadInventory(); loadOps(); loadCharts();
+// ====== 商品管理列表 ======
+function loadMgmt() {
+  var kw = document.getElementById('mgmtKeyword').value;
+  api('products', {kw:kw}).then(function(d) {
+    var tbody = document.getElementById('mgmtTable');
+    if (!d || !d.data) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">暂无数据</td></tr>'; return; }
+    if (d.data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">无匹配结果</td></tr>'; return; }
+    var html = '';
+    for (var i = 0; i < d.data.length; i++) {
+      var p = d.data[i];
+      var editBtn = '<button class="btn btn-sm btn-outline-primary me-1" onclick="openEdit(' + p.id + ',\'' + p.barcode + '\',\'' + escapeJS(p.name) + '\',\'' + escapeJS(p.spec||'') + '\',' + p.price + ')">编辑</button>';
+      var delBtn = p.stock === 0
+        ? '<button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(' + p.id + ',\'' + escapeJS(p.name) + '\')">删除</button>'
+        : '<button class="btn btn-sm btn-outline-secondary" disabled title="库存不为0，无法删除">删除</button>';
+      html += '<tr><td>' + p.id + '</td><td><code>' + p.barcode + '</code></td><td>' + p.name + '</td><td>' + (p.spec||'') + '</td><td>' + p.price.toFixed(2) + '</td><td' + (p.stock <= 10 ? ' class="text-danger fw-bold"' : '') + '>' + p.stock + '</td><td>' + editBtn + ' ' + delBtn + '</td></tr>';
+    }
+    tbody.innerHTML = html;
+  });
+}
+
+function escapeJS(s) {
+  if (!s) return '';
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+// ====== 打开编辑弹窗 ======
+function openEdit(id, barcode, name, spec, price) {
+  document.getElementById('editId').value = id;
+  document.getElementById('editBarcode').value = barcode;
+  document.getElementById('editName').value = name;
+  document.getElementById('editSpec').value = spec;
+  document.getElementById('editPrice').value = price;
+  document.getElementById('editTip').textContent = '';
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+// ====== 保存编辑 ======
+function saveEdit() {
+  var payload = {
+    id:   parseInt(document.getElementById('editId').value),
+    name: document.getElementById('editName').value.trim(),
+    spec: document.getElementById('editSpec').value.trim(),
+    price: parseFloat(document.getElementById('editPrice').value) || 0
+  };
+  if (!payload.name) {
+    document.getElementById('editTip').className = 'small mt-2 text-danger';
+    document.getElementById('editTip').textContent = '名称不能为空';
+    return;
+  }
+  apiPost('update_product', payload).then(function(r) {
+    var tip = document.getElementById('editTip');
+    if (r.ok) {
+      tip.className = 'small mt-2 text-success';
+      tip.textContent = '保存成功';
+      setTimeout(function(){ bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); }, 800);
+      loadStats(); loadInventory(); loadMgmt();
+    } else {
+      tip.className = 'small mt-2 text-danger';
+      tip.textContent = r.msg || '保存失败';
+    }
+  });
+}
+
+// ====== 确认删除 ======
+function confirmDelete(id, name) {
+  if (!confirm('确定删除商品「' + name + '」（ID=' + id + '）？\n删除后不可恢复！')) return;
+  apiPost('delete_product', {id:id}).then(function(r) {
+    if (r.ok) {
+      loadStats(); loadInventory(); loadMgmt();
+    } else {
+      alert('删除失败：' + (r.msg || '未知错误'));
+    }
+  });
+}
+
+// ====== 初始化 ======
+function refreshAll() {
+  loadStats(); loadInventory(); loadOps(); loadCharts(); loadMgmt();
 }
 refreshAll();
-setInterval(loadStats, 5000);   // 实时感体现：QT端一操作这里就更新
+setInterval(loadStats, 5000);
 
-// 切换Tab时重新加载对应数据
-document.querySelectorAll('[data-bs-toggle="tab"]').forEach(btn => {
-  btn.addEventListener('shown.bs.tab', e => {
-    const t = e.target.dataset.bsTarget;
+// Tab 切换时加载数据
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(btn) {
+  btn.addEventListener('shown.bs.tab', function(e) {
+    var t = e.target.dataset.bsTarget;
     if (t === '#pane-inv')   loadInventory();
     if (t === '#pane-ops')   loadOps();
     if (t === '#pane-chart') loadCharts();
+    if (t === '#pane-mgmt')  loadMgmt();
   });
 });
-document.getElementById('invKeyword').addEventListener('keyup', e => {
+
+document.getElementById('invKeyword').addEventListener('keyup', function(e) {
   if (e.key === 'Enter') loadInventory();
+});
+document.getElementById('mgmtKeyword').addEventListener('keyup', function(e) {
+  if (e.key === 'Enter') loadMgmt();
 });
 </script>
 </body>

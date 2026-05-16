@@ -50,6 +50,8 @@ private:
     QByteArray apiOps();
     QByteArray apiChart();
     QByteArray apiAddProduct(const QByteArray &body);
+    QByteArray apiUpdateProduct(const QByteArray &body);
+    QByteArray apiDeleteProduct(const QByteArray &body);
 
     // 工具：构造 HTTP 响应
     QByteArray makeResponse(int code, const QByteArray &contentType, const QByteArray &body);

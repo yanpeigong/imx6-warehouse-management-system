@@ -17,7 +17,7 @@
 
 // ====== 修改这里：填入你和队友的真实姓名学号 ======
 static const QString TEAM_INFO =
-    "组员：张三 23041001    李四 23041002";
+    "组员：龚焱培 2023211640   李宏恩 2023211644";
 
 // ====== 串口设备名：你的扫码枪是 USB CDC-ACM 设备 ======
 static const QString SERIAL_PORT_NAME = "/dev/ttyACM0";
@@ -34,7 +34,7 @@ MainWindow::MainWindow(const QString &username, const QString &role, QWidget *pa
         "background-color:#1976D2; color:white; padding:10px; font-size:14px; font-weight:bold;");
     teamLbl->setAlignment(Qt::AlignCenter);
 
-    QLabel *titleLbl = new QLabel("📦 基于条码扫描的仓库管理系统");
+    QLabel *titleLbl = new QLabel("基于条码扫描的仓库管理系统");
     QFont tf = titleLbl->font();
     tf.setPointSize(20); tf.setBold(true);
     titleLbl->setFont(tf);
@@ -58,10 +58,10 @@ MainWindow::MainWindow(const QString &username, const QString &role, QWidget *pa
             "QPushButton:pressed{padding-top:10px;}").arg(color));
         return b;
     };
-    QPushButton *btnIn   = makeBtn("📥", "入  库", "#1976D2");
-    QPushButton *btnOut  = makeBtn("📤", "出  库", "#D32F2F");
-    QPushButton *btnInv  = makeBtn("📋", "库存查询", "#388E3C");
-    QPushButton *btnLog  = makeBtn("📜", "操作日志", "#7B1FA2");
+    QPushButton *btnIn   = makeBtn("Stock Out", "入库", "#1976D2");
+    QPushButton *btnOut  = makeBtn("Stock In", "出库", "#D32F2F");
+    QPushButton *btnInv  = makeBtn("Stock Inquiry", "库存查询", "#388E3C");
+    QPushButton *btnLog  = makeBtn("Operation Query", "操作日志", "#7B1FA2");
 
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(btnIn,  0, 0);

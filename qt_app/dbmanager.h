@@ -23,8 +23,12 @@ public:
 
     // ========== 商品相关 ==========
     QVariantMap findProductByBarcode(const QString &barcode);
+    QVariantMap findProductById(int id);
     int  addProduct(const QString &barcode, const QString &name,
                     const QString &spec, double price);
+    bool updateProduct(int id, const QString &name,
+                       const QString &spec, double price);
+    bool deleteProduct(int id);
     bool updateStock(int productId, int delta);
     QList<QVariantMap> listAllProducts(const QString &keyword = QString());
 

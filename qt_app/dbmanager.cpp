@@ -58,6 +58,24 @@ QVariantMap DbManager::findProductByBarcode(const QString &barcode) {
     return m;
 }
 
+QVariantMap DbManager::findProductById(int id) {
+    QVariantMap m;
+    sqlite3_stmt *stmt = nullptr;
+    const char *sql = "SELECT id,barcode,name,spec,price,stock FROM products WHERE id=?";
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) return m;
+    sqlite3_bind_int(stmt, 1, id);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        m["id"]      = sqlite3_column_int(stmt, 0);
+        m["barcode"] = QString::fromUtf8((const char*)sqlite3_column_text(stmt, 1));
+        m["name"]    = QString::fromUtf8((const char*)sqlite3_column_text(stmt, 2));
+        m["spec"]    = QString::fromUtf8((const char*)sqlite3_column_text(stmt, 3));
+        m["price"]   = sqlite3_column_double(stmt, 4);
+        m["stock"]   = sqlite3_column_int(stmt, 5);
+    }
+    sqlite3_finalize(stmt);
+    return m;
+}
+
 int DbManager::addProduct(const QString &barcode, const QString &name,
                           const QString &spec, double price) {
     sqlite3_stmt *stmt = nullptr;
@@ -77,6 +95,30 @@ int DbManager::addProduct(const QString &barcode, const QString &name,
         return -1;
     }
     return (int)sqlite3_last_insert_rowid(db_);
+}
+
+bool DbManager::updateProduct(int id, const QString &name,
+                               const QString &spec, double price) {
+    sqlite3_stmt *stmt = nullptr;
+    const char *sql = "UPDATE products SET name=?, spec=?, price=? WHERE id=?";
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) return false;
+    sqlite3_bind_text(stmt, 1, name.toUtf8().constData(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmt, 2, spec.toUtf8().constData(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_double(stmt, 3, price);
+    sqlite3_bind_int(stmt, 4, id);
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    return rc == SQLITE_DONE;
+}
+
+bool DbManager::deleteProduct(int id) {
+    sqlite3_stmt *stmt = nullptr;
+    const char *sql = "DELETE FROM products WHERE id=?";
+    if (sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr) != SQLITE_OK) return false;
+    sqlite3_bind_int(stmt, 1, id);
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    return rc == SQLITE_DONE;
 }
 
 bool DbManager::updateStock(int productId, int delta) {
